@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+codedb.snapshot
+_private/

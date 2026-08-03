@@ -1,0 +1,4 @@
+interface:
+  display_name: "Goal Architect"
+  short_description: "Architect validated goal and rider pairs"
+  default_prompt: "Use $goal-architect to create a grounded goal and rider for this coding objective."

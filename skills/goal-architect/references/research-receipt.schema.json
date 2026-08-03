@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/curtis-arch/goal-architect/main/skills/goal-architect/references/research-receipt.schema.json",
+  "title": "Read-only research receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "assignment_id",
+    "source_revision",
+    "status",
+    "limitations",
+    "mode",
+    "scope",
+    "facts",
+    "conflicts",
+    "open_decisions",
+    "actions"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "receipt_id": {"$ref": "#/$defs/id"},
+    "assignment_id": {"$ref": "#/$defs/id"},
+    "source_revision": {"$ref": "#/$defs/sourceRevision"},
+    "status": {"enum": ["complete", "partial", "blocked"]},
+    "limitations": {"$ref": "#/$defs/limitations"},
+    "mode": {"const": "read-only-research"},
+    "scope": {"$ref": "#/$defs/scope"},
+    "facts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/fact"}
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/conflict"}
+    },
+    "open_decisions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/openDecision"}
+    },
+    "actions": {"$ref": "#/$defs/actions"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {"enum": ["partial", "blocked"]}
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "limitations": {"minItems": 1}
+        }
+      },
+      "else": {
+        "properties": {
+          "limitations": {"maxItems": 0}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nonEmptyText": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceRevision": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "limitations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roots", "sources"],
+      "properties": {
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/path"}
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/path"}
+        }
+      }
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line_start", "line_end", "exact_sha256"],
+      "properties": {
+        "path": {"$ref": "#/$defs/path"},
+        "line_start": {"type": "integer", "minimum": 1},
+        "line_end": {"type": "integer", "minimum": 1},
+        "exact_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "citations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/citation"}
+    },
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fact_id", "subject", "claim", "citations"],
+      "properties": {
+        "fact_id": {"type": "string", "pattern": "^F[1-9][0-9]*$"},
+        "subject": {"$ref": "#/$defs/nonEmptyText"},
+        "claim": {"$ref": "#/$defs/nonEmptyText"},
+        "citations": {"$ref": "#/$defs/citations"}
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conflict_id", "description", "fact_refs", "citations"],
+      "properties": {
+        "conflict_id": {"type": "string", "pattern": "^C[1-9][0-9]*$"},
+        "description": {"$ref": "#/$defs/nonEmptyText"},
+        "fact_refs": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^F[1-9][0-9]*$"}
+        },
+        "citations": {"$ref": "#/$defs/citations"}
+      }
+    },
+    "openDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision_id", "question", "citations"],
+      "properties": {
+        "decision_id": {"type": "string", "pattern": "^D[1-9][0-9]*$"},
+        "question": {"$ref": "#/$defs/nonEmptyText"},
+        "citations": {"$ref": "#/$defs/citations"}
+      }
+    },
+    "actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implementation", "writes", "external"],
+      "properties": {
+        "implementation": {"type": "array", "maxItems": 0},
+        "writes": {"type": "array", "maxItems": 0},
+        "external": {"type": "array", "maxItems": 0}
+      }
+    }
+  }
+}

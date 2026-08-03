@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/curtis-arch/goal-architect/main/skills/goal-architect/references/evidence-dossier.schema.json",
+  "title": "Deterministically compiled evidence dossier",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_revision",
+    "receipts",
+    "facts",
+    "conflicts",
+    "open_decisions"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "source_revision": {"$ref": "#/$defs/sourceRevision"},
+    "receipts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/receiptIdentity"}
+    },
+    "facts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/compiledFact"}
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/compiledConflict"}
+    },
+    "open_decisions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/compiledDecision"}
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "nonEmptyText": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceRevision": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "limitations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line_start", "line_end", "exact_sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "line_start": {"type": "integer", "minimum": 1},
+        "line_end": {"type": "integer", "minimum": 1},
+        "exact_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "citations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/citation"}
+    },
+    "receiptIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receipt_id", "assignment_id", "status", "limitations"],
+      "properties": {
+        "receipt_id": {"$ref": "#/$defs/id"},
+        "assignment_id": {"$ref": "#/$defs/id"},
+        "status": {"enum": ["complete", "partial", "blocked"]},
+        "limitations": {"$ref": "#/$defs/limitations"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {"enum": ["partial", "blocked"]}
+            },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "limitations": {"minItems": 1}
+            }
+          },
+          "else": {
+            "properties": {
+              "limitations": {"maxItems": 0}
+            }
+          }
+        }
+      ]
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receipt_id", "fact_id"],
+      "properties": {
+        "receipt_id": {"$ref": "#/$defs/id"},
+        "fact_id": {"type": "string", "pattern": "^F[1-9][0-9]*$"}
+      }
+    },
+    "compiledFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fact_key", "subject", "claim", "citations", "origins"],
+      "properties": {
+        "fact_key": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "subject": {"$ref": "#/$defs/nonEmptyText"},
+        "claim": {"$ref": "#/$defs/nonEmptyText"},
+        "citations": {"$ref": "#/$defs/citations"},
+        "origins": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/origin"}
+        }
+      }
+    },
+    "compiledConflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt_id",
+        "conflict_id",
+        "description",
+        "fact_refs",
+        "citations"
+      ],
+      "properties": {
+        "receipt_id": {"$ref": "#/$defs/id"},
+        "conflict_id": {"type": "string", "pattern": "^C[1-9][0-9]*$"},
+        "description": {"$ref": "#/$defs/nonEmptyText"},
+        "fact_refs": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^F[1-9][0-9]*$"}
+        },
+        "citations": {"$ref": "#/$defs/citations"}
+      }
+    },
+    "compiledDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receipt_id", "decision_id", "question", "citations"],
+      "properties": {
+        "receipt_id": {"$ref": "#/$defs/id"},
+        "decision_id": {"type": "string", "pattern": "^D[1-9][0-9]*$"},
+        "question": {"$ref": "#/$defs/nonEmptyText"},
+        "citations": {"$ref": "#/$defs/citations"}
+      }
+    }
+  }
+}
